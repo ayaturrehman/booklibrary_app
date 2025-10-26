@@ -18,7 +18,19 @@ export async function POST(request) {
       );
     }
 
-    const valid = validateCredentials(email, password);
+    let valid;
+    try {
+      valid = validateCredentials(email, password);
+    } catch (configError) {
+      console.error("Auth configuration error", configError);
+      return NextResponse.json(
+        {
+          error:
+            "Authentication is not configured. Set ADMIN_EMAIL, ADMIN_PASSWORD, and AUTH_SECRET.",
+        },
+        { status: 500 }
+      );
+    }
     if (!valid) {
       return NextResponse.json(
         { error: "Invalid credentials" },

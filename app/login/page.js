@@ -74,7 +74,7 @@ function LoginForm() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="admin@example.com"
             autoComplete="email"
           />
@@ -87,7 +87,7 @@ function LoginForm() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="••••••••"
             autoComplete="current-password"
           />
@@ -101,9 +101,7 @@ function LoginForm() {
         </button>
       </form>
       <p className="mt-6 text-xs text-slate-500">
-        Default credentials: admin@example.com / library123. Update the values by
-        setting the `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `AUTH_SECRET` variables
-        in `.env.local`.
+        Contact your system administrator if you need help accessing this portal.
       </p>
     </div>
   );

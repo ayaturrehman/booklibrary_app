@@ -29,7 +29,19 @@ export async function proxy(request) {
   }
 
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value || "";
-  const session = await verifySessionToken(sessionToken);
+  let session = null;
+  try {
+    session = await verifySessionToken(sessionToken);
+  } catch (error) {
+    console.error("Auth configuration error", error);
+    return NextResponse.json(
+      {
+        error:
+          "Authentication is not configured. Set ADMIN_EMAIL, ADMIN_PASSWORD, and AUTH_SECRET.",
+      },
+      { status: 500 }
+    );
+  }
 
   if (!session) {
     if (isApiRoute) {

@@ -18,7 +18,7 @@ Next.js admin portal and REST API for managing a digital book library. Admins ca
    ```bash
    npm install
    ```
-2. Create `.env.local` in the project root and configure admin credentials:
+2. Create `.env.local` in the project root and configure admin credentials (use your own secure values; the example below is only illustrative):
    ```env
    ADMIN_EMAIL=admin@example.com
    ADMIN_PASSWORD=library123
@@ -84,8 +84,3 @@ Responses mirror the admin APIs. Chapter objects include `pdf_path`, which is a 
 
 ---
 Planned next steps include integrating full auth for the Flutter app, adding analytics, and expanding sharing features on the mobile side. Contributions are welcome! ⭐
-
-
-
-
-# booklibrary_app
