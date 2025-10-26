@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCategory, listBooksForCategory } from "@/lib/database";
+import { getCategory, listBooksForCategory } from "@/lib/db";
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -23,12 +23,12 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid category" }, { status: 400 });
     }
 
-    const category = getCategory(categoryId);
+    const category = await getCategory(categoryId);
     if (!category) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
     }
 
-    const books = listBooksForCategory(categoryId);
+    const books = await listBooksForCategory(categoryId);
     return NextResponse.json({ category, books });
   } catch (error) {
     console.error("Failed to fetch public category detail", error);

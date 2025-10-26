@@ -1,10 +1,10 @@
 # Book Library Admin
 
-Next.js admin portal and REST API for managing a digital book library. Admins can organise categories, books, and chapters (with PDF uploads) through the web console, while a Flutter client consumes public read-only endpoints to browse the catalogue.
+Next.js admin portal and REST API for managing a digital book library. Admins can organise categories, books, and chapters (with PDF uploads) through the web console, while a Flutter client consumes public read-only endpoints to browse the catalogue. Data is persisted with **Vercel Postgres** using **Prisma**, and PDFs are stored in **Vercel Blob**, making the app deployable on Vercel without extra infrastructure.
 
 ## Features
-- SQLite data store via `better-sqlite3` for local persistence.
-- Category → Book → Chapter hierarchy with cascaded deletes and PDF file storage under `public/uploads/chapters`.
+- Vercel Postgres data store accessed through Prisma.
+- Category → Book → Chapter hierarchy with cascaded deletes and PDF files stored in Vercel Blob.
 - Admin dashboard with dedicated CRUD pages for categories, books, and chapters; PDF upload and chapter ordering supported.
 - Simple session-based authentication (email/password from environment variables) with middleware protection.
 - Public read-only API routes for the Flutter app to fetch categories, books, and chapters.
@@ -18,19 +18,31 @@ Next.js admin portal and REST API for managing a digital book library. Admins ca
    ```bash
    npm install
    ```
-2. Create `.env.local` in the project root and configure admin credentials (use your own secure values; the example below is only illustrative):
+2. Provision Vercel Postgres and Vercel Blob for your project (Vercel dashboard ▸ Storage ▸ Add).
+
+3. Create `.env.local` in the project root and configure credentials and storage tokens (use your own secure values; the values below are placeholders). `DATABASE_URL` should be the **direct / non-pooled** connection string from Vercel Postgres (labelled `POSTGRES_URL_NON_POOLING` in the dashboard).
    ```env
    ADMIN_EMAIL=admin@example.com
    ADMIN_PASSWORD=library123
    AUTH_SECRET=replace-with-long-random-value
+   DATABASE_URL=postgres://user:password@host:5432/dbname
+   BLOB_READ_WRITE_TOKEN=vercel_blob_token
    ```
-3. Run the dev server:
+   Sync those variables to Vercel with `vercel env pull` / `vercel env push`.
+
+4. Apply the schema and optional seed data (requires `DATABASE_URL`):
+   ```bash
+   npm run db:migrate
+   npm run db:seed   # optional sample content
+   ```
+
+5. Run the dev server:
    ```bash
    npm run dev
    ```
-4. Visit `http://localhost:3000/login`, sign in with the configured credentials, and manage the library.
+6. Visit `http://localhost:3000/login`, sign in with the configured credentials, and manage the library.
 
-Uploaded PDFs are stored on disk at `public/uploads/chapters`. The repository keeps the directory (via `.gitignore`) but ignores individual files.
+Uploaded PDFs are stored in Vercel Blob; the API responds with the public URL which the Flutter app can open directly.
 
 ## API Reference
 
@@ -67,11 +79,12 @@ Uploaded PDFs are stored on disk at `public/uploads/chapters`. The repository ke
 | `GET` | `/api/public/books/:bookId` | Book detail + chapters |
 | `GET` | `/api/public/chapters/:chapterId` | Chapter detail |
 
-Responses mirror the admin APIs. Chapter objects include `pdf_path`, which is a publicly accessible URL the Flutter app can download.
+Responses mirror the admin APIs. Chapter objects include `pdf_path`, which is a Vercel Blob URL the Flutter app can download.
 
 ## Development Notes
-- Database file lives at `data/library.db`. Delete it to reset data.
-- Middleware guards all pages/APIs except `/login`, `/api/auth/*`, `/api/public/*`, and static assets.
+- Schema is created automatically on cold start if missing, but you should manage migrations using your preferred tooling for Postgres in production.
+- Authentication requires the admin env vars; requests fail with 500 if they are not set.
+- Proxy guards all pages/APIs except `/login`, `/api/auth/*`, `/api/public/*`, and static assets.
 - Update the public API policy once the Flutter app is authenticated—these endpoints are intended as temporary read-only access.
 
 ## Scripts
@@ -81,6 +94,8 @@ Responses mirror the admin APIs. Chapter objects include `pdf_path`, which is a 
 | `npm run build` | Production build |
 | `npm run start` | Run production server |
 | `npm run lint` | ESLint check |
+| `npm run db:migrate` | Ensure database schema exists |
+| `npm run db:seed` | Insert sample categories/books/chapters |
 
 ---
 Planned next steps include integrating full auth for the Flutter app, adding analytics, and expanding sharing features on the mobile side. Contributions are welcome! ⭐
