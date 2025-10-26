@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getChapter } from "@/lib/database";
+import { getChapter } from "@/lib/db";
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -23,7 +23,7 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid chapter" }, { status: 400 });
     }
 
-    const chapter = getChapter(chapterId);
+    const chapter = await getChapter(chapterId);
     if (!chapter) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }

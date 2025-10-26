@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBook, updateBook, deleteBook, listChaptersForBook } from "@/lib/database";
+import { getBook, updateBook, deleteBook, listChaptersForBook } from "@/lib/db";
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -21,12 +21,12 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
     }
 
-    const book = getBook(bookId);
+    const book = await getBook(bookId);
     if (!book) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
 
-    const chapters = listChaptersForBook(bookId);
+    const chapters = await listChaptersForBook(bookId);
     return NextResponse.json({ book, chapters });
   } catch (error) {
     console.error("Failed to get book", error);
@@ -42,7 +42,7 @@ export async function PUT(request, context) {
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
     }
 
-    const existing = getBook(bookId);
+    const existing = await getBook(bookId);
     if (!existing) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
@@ -63,7 +63,7 @@ export async function PUT(request, context) {
       );
     }
 
-    const book = updateBook(bookId, { title, author, description });
+    const book = await updateBook(bookId, { title, author, description });
     return NextResponse.json({ book });
   } catch (error) {
     console.error("Failed to update book", error);
@@ -82,12 +82,12 @@ export async function DELETE(_request, context) {
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
     }
 
-    const existing = getBook(bookId);
+    const existing = await getBook(bookId);
     if (!existing) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
 
-    deleteBook(bookId);
+    await deleteBook(bookId);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Failed to delete book", error);

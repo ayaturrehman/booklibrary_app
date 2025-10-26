@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import {
-  listCategories,
-  createCategory,
-} from "@/lib/database";
+import { listCategories, createCategory } from "@/lib/db";
 
 export async function GET() {
   try {
-    const categories = listCategories();
+    const categories = await listCategories();
     return NextResponse.json({ categories });
   } catch (error) {
     console.error("Failed to fetch categories", error);
@@ -30,11 +27,11 @@ export async function POST(request) {
       );
     }
 
-    const category = createCategory({ name, description });
+    const category = await createCategory({ name, description });
     return NextResponse.json({ category }, { status: 201 });
   } catch (error) {
     console.error("Failed to create category", error);
-    if (error && error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    if (error && error.code === "P2002") {
       return NextResponse.json(
         { error: "Category name must be unique" },
         { status: 409 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBook, listChaptersForBook } from "@/lib/database";
+import { getBook, listChaptersForBook } from "@/lib/db";
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -23,12 +23,12 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid book" }, { status: 400 });
     }
 
-    const book = getBook(bookId);
+    const book = await getBook(bookId);
     if (!book) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
 
-    const chapters = listChaptersForBook(bookId);
+    const chapters = await listChaptersForBook(bookId);
     return NextResponse.json({ book, chapters });
   } catch (error) {
     console.error("Failed to fetch public book detail", error);

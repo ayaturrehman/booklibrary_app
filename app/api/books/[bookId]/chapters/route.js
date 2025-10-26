@@ -1,19 +1,8 @@
-import fs from "fs";
-import path from "path";
 import { NextResponse } from "next/server";
-import {
-  getBook,
-  listChaptersForBook,
-  createChapter,
-} from "@/lib/database";
+import { put } from "@vercel/blob";
+import { getBook, listChaptersForBook, createChapter } from "@/lib/db";
 
-const uploadsDir = path.join(process.cwd(), "public", "uploads", "chapters");
-
-function ensureUploadsDir() {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-}
+const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -35,12 +24,12 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
     }
 
-    const book = getBook(bookId);
+    const book = await getBook(bookId);
     if (!book) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
 
-    const chapters = listChaptersForBook(bookId);
+    const chapters = await listChaptersForBook(bookId);
     return NextResponse.json({ book, chapters });
   } catch (error) {
     console.error("Failed to fetch chapters", error);
@@ -59,9 +48,17 @@ export async function POST(request, context) {
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
     }
 
-    const book = getBook(bookId);
+    const book = await getBook(bookId);
     if (!book) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
+    }
+
+    if (!blobToken) {
+      console.error("Missing BLOB_READ_WRITE_TOKEN environment variable.");
+      return NextResponse.json(
+        { error: "File storage is not configured" },
+        { status: 500 }
+      );
     }
 
     const formData = await request.formData();
@@ -84,8 +81,6 @@ export async function POST(request, context) {
       );
     }
 
-    ensureUploadsDir();
-
     const arrayBuffer = await pdfFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const originalName = pdfFile.name || "chapter.pdf";
@@ -93,16 +88,18 @@ export async function POST(request, context) {
       .toLowerCase()
       .replace(/[^a-z0-9.]+/g, "-")
       .replace(/^-+|-+$/g, "");
-    const fileName = `${Date.now()}-${sanitizedName || "chapter.pdf"}`;
-    const filePath = path.join(uploadsDir, fileName);
-    fs.writeFileSync(filePath, buffer);
+    const blobName = `chapters/${Date.now()}-${sanitizedName || "chapter.pdf"}`;
 
-    const pdfPath = path.join("/uploads/chapters", fileName);
+    const upload = await put(blobName, buffer, {
+      access: "public",
+      contentType: "application/pdf",
+      token: blobToken,
+    });
 
-    const chapter = createChapter({
+    const chapter = await createChapter({
       bookId,
       title,
-      pdfPath,
+      pdfPath: upload.url,
       pageCount: Number.isFinite(pageCount) ? pageCount : undefined,
       chapterIndex: Number.isFinite(chapterIndex) ? chapterIndex : undefined,
     });

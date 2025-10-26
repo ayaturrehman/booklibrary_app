@@ -6,17 +6,26 @@ import {
   listCategories,
   getRecentBooks,
   getRecentChapters,
-} from "@/lib/database";
+} from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const categories = listCategories();
-  const totalCategories = countCategories();
-  const totalBooks = countBooks();
-  const totalChapters = countChapters();
-  const recentBooks = getRecentBooks(5);
-  const recentChapters = getRecentChapters(5);
+export default async function DashboardPage() {
+  const [
+    categories,
+    totalCategories,
+    totalBooks,
+    totalChapters,
+    recentBooks,
+    recentChapters,
+  ] = await Promise.all([
+    listCategories(),
+    countCategories(),
+    countBooks(),
+    countChapters(),
+    getRecentBooks(5),
+    getRecentChapters(5),
+  ]);
 
   return (
     <div className="space-y-8">

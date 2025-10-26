@@ -1,13 +1,8 @@
-import fs from "fs";
-import path from "path";
 import { NextResponse } from "next/server";
-import {
-  getChapter,
-  updateChapter,
-  deleteChapter,
-} from "@/lib/database";
+import { put, del } from "@vercel/blob";
+import { getChapter, updateChapter, deleteChapter } from "@/lib/db";
 
-const uploadsDir = path.join(process.cwd(), "public", "uploads", "chapters");
+const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -21,6 +16,17 @@ function normalizeId(rawValue) {
   return id;
 }
 
+async function removeBlob(url) {
+  if (!url || !blobToken) {
+    return;
+  }
+  try {
+    await del(url, { token: blobToken });
+  } catch (error) {
+    console.warn("Failed to delete blob", error);
+  }
+}
+
 export async function GET(_request, context) {
   try {
     const { chapterId: chapterIdRaw } = await resolveParams(context);
@@ -29,7 +35,7 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid chapter id" }, { status: 400 });
     }
 
-    const chapter = getChapter(chapterId);
+    const chapter = await getChapter(chapterId);
     if (!chapter) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
@@ -52,7 +58,7 @@ export async function PUT(request, context) {
       return NextResponse.json({ error: "Invalid chapter id" }, { status: 400 });
     }
 
-    const existing = getChapter(chapterId);
+    const existing = await getChapter(chapterId);
     if (!existing) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
@@ -73,14 +79,12 @@ export async function PUT(request, context) {
       if (formTitle !== null) {
         title = formTitle.toString().trim();
       }
-
       if (formPageCount !== null) {
         const parsed = Number(formPageCount);
         if (Number.isFinite(parsed)) {
           pageCount = parsed;
         }
       }
-
       if (formChapterIndex !== null) {
         const parsed = Number(formChapterIndex);
         if (Number.isFinite(parsed)) {
@@ -89,30 +93,33 @@ export async function PUT(request, context) {
       }
 
       if (pdfFile && typeof pdfFile.arrayBuffer === "function") {
-        const arrayBuffer = await pdfFile.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
+        if (!blobToken) {
+          return NextResponse.json(
+            { error: "File storage is not configured" },
+            { status: 500 }
+          );
         }
 
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
         const originalName = pdfFile.name || "chapter.pdf";
         const sanitizedName = originalName
           .toLowerCase()
           .replace(/[^a-z0-9.]+/g, "-")
           .replace(/^-+|-+$/g, "");
-        const fileName = `${Date.now()}-${sanitizedName || "chapter.pdf"}`;
-        const filePath = path.join(uploadsDir, fileName);
-        fs.writeFileSync(filePath, buffer);
+        const blobName = `chapters/${Date.now()}-${sanitizedName || "chapter.pdf"}`;
 
-        // Remove old file if it exists
-        if (existing.pdf_path) {
-          const previousPath = path.join(process.cwd(), "public", existing.pdf_path);
-          if (fs.existsSync(previousPath)) {
-            fs.unlinkSync(previousPath);
-          }
+        const upload = await put(blobName, buffer, {
+          access: "public",
+          contentType: "application/pdf",
+          token: blobToken,
+        });
+
+        if (existing.pdf_path && existing.pdf_path !== upload.url) {
+          await removeBlob(existing.pdf_path);
         }
 
-        pdfPath = path.join("/uploads/chapters", fileName);
+        pdfPath = upload.url;
       }
     } else {
       const payload = await request.json();
@@ -140,7 +147,7 @@ export async function PUT(request, context) {
       );
     }
 
-    const chapter = updateChapter(chapterId, {
+    const chapter = await updateChapter(chapterId, {
       title,
       pdfPath,
       pageCount,
@@ -165,19 +172,13 @@ export async function DELETE(_request, context) {
       return NextResponse.json({ error: "Invalid chapter id" }, { status: 400 });
     }
 
-    const existing = getChapter(chapterId);
+    const existing = await getChapter(chapterId);
     if (!existing) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
 
-    deleteChapter(chapterId);
-
-    if (existing.pdf_path) {
-      const filePath = path.join(process.cwd(), "public", existing.pdf_path);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    await deleteChapter(chapterId);
+    await removeBlob(existing.pdf_path);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

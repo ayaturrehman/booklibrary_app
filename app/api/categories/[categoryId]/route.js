@@ -4,7 +4,7 @@ import {
   updateCategory,
   deleteCategory,
   listBooksForCategory,
-} from "@/lib/database";
+} from "@/lib/db";
 
 async function resolveParams(context) {
   return (await context?.params) || {};
@@ -26,12 +26,12 @@ export async function GET(_request, context) {
       return NextResponse.json({ error: "Invalid category id" }, { status: 400 });
     }
 
-    const category = getCategory(id);
+    const category = await getCategory(id);
     if (!category) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
     }
 
-    const books = listBooksForCategory(id);
+    const books = await listBooksForCategory(id);
     return NextResponse.json({ category, books });
   } catch (error) {
     console.error("Failed to get category", error);
@@ -50,7 +50,7 @@ export async function PUT(request, context) {
       return NextResponse.json({ error: "Invalid category id" }, { status: 400 });
     }
 
-    const existing = getCategory(id);
+    const existing = await getCategory(id);
     if (!existing) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
     }
@@ -69,11 +69,11 @@ export async function PUT(request, context) {
       );
     }
 
-    const category = updateCategory(id, { name, description });
+    const category = await updateCategory(id, { name, description });
     return NextResponse.json({ category });
   } catch (error) {
     console.error("Failed to update category", error);
-    if (error && error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    if (error && error.code === "P2002") {
       return NextResponse.json(
         { error: "Category name must be unique" },
         { status: 409 }
@@ -94,12 +94,12 @@ export async function DELETE(_request, context) {
       return NextResponse.json({ error: "Invalid category id" }, { status: 400 });
     }
 
-    const existing = getCategory(id);
+    const existing = await getCategory(id);
     if (!existing) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
     }
 
-    deleteCategory(id);
+    await deleteCategory(id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Failed to delete category", error);
