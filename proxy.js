@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "./lib/auth";
 
 const PUBLIC_PATHS = ["/login"];
-const PUBLIC_API_PATHS = [
-  "/api/auth/login",
-  "/api/auth/logout",
-  "/api/public/",
-];
+const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/auth/logout", "/api/public/"];
 const PUBLIC_PREFIXES = ["/_next/", "/favicon", "/public/", "/uploads/"];
 
 function isPublicPath(pathname) {
@@ -17,10 +13,10 @@ function isPublicPath(pathname) {
 }
 
 function isPublicApi(pathname) {
-  return PUBLIC_API_PATHS.some((path) => pathname.startsWith(path));
+  return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
@@ -52,6 +48,8 @@ export async function middleware(request) {
 
   return NextResponse.next();
 }
+
+export default proxy;
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

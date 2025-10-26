@@ -1,9 +1,9 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTarget = searchParams.get("redirect") || "/";
@@ -106,5 +106,19 @@ export default function LoginPage() {
         in `.env.local`.
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg text-sm text-slate-600">
+          Loading login…
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
