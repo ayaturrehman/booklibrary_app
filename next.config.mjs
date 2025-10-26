@@ -1,10 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
-  serverExternalPackages: ['@prisma/client', '@prisma/engines'],
-  // Trace all dependencies for serverless functions
+  // Explicitly include Prisma engine files in all API routes
   outputFileTracingIncludes: {
-    '/api/**/*': ['./node_modules/.prisma/**/*', './node_modules/@prisma/client/**/*'],
+    '/api/**': [
+      './node_modules/.prisma/client/**/*',
+      './node_modules/@prisma/client/**/*',
+      './node_modules/@prisma/engines/**/*',
+    ],
   },
 };
 
