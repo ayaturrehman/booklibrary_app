@@ -83,9 +83,9 @@ export default function PrivacyPolicyPage() {
               Academy at:{" "}
               <a
                 className="font-medium text-blue-700 underline"
-                href="mailto:support@iscacademy.app"
+                href="mailto:illuminatorsstudyclub92@gmail.com"
               >
-                support@iscacademy.app
+                illuminatorsstudyclub92@gmail.com
               </a>
             </p>
           </PolicySection>
