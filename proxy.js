@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "./lib/auth";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/privacy"];
 const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/auth/logout", "/api/public/"];
 const PUBLIC_PREFIXES = ["/_next/", "/favicon", "/public/", "/uploads/"];
 

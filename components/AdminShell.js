@@ -17,6 +17,10 @@ export default function AdminShell({ children }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
+  if (pathname === "/privacy") {
+    return children;
+  }
+
   if (pathname === "/login") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
